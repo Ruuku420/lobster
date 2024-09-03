@@ -8,6 +8,7 @@ lobster_editor=${VISUAL:-${EDITOR}}
 tmp_dir="${TMPDIR:-/tmp}/lobster" && mkdir -p "$tmp_dir"
 lobster_socket="${TMPDIR:-/tmp}/lobster.sock" # Used by mpv (check the play_video function)
 lobster_logfile="${TMPDIR:-/tmp}/lobster.log"
+lobster_session_logfile="${TMPDIR:-/tmp}/$(shuf -i1-100000 -n1)_lobster.log"
 applications="$HOME/.local/share/applications/lobster" # Used for external menus (for now just rofi)
 images_cache_dir="$tmp_dir/lobster-images"             # Used for storing downloaded images of movie covers
 
@@ -76,6 +77,7 @@ cleanup() {
         killall ueberzugpp 2>/dev/null
         rm -f "$ueberzugpp_tmp_dir"/ueberzugpp-*
     fi
+    cat $lobster_session_logfile > $lobster_logfile && rm $lobster_session_logfile
     set +x && exec 2>&-
 }
 trap cleanup EXIT INT TERM
@@ -194,7 +196,7 @@ configuration() {
 # The reason I use additional file descriptors is because of the use of tee
 # which when piped into would hijack the terminal, which was unwanted behavior
 # since there are SSH use cases for mpv and since I wanted to have a logging mechanism
-exec 3>&1 4>&2 1>"$lobster_logfile" 2>&1
+exec 3>&1 4>&2 1>"$lobster_session_logfile" 2>&1
 {
     # check that the necessary programs are installed
     dep_ch "grep" "$sed" "curl" "fzf" || true
@@ -899,5 +901,5 @@ EOF
 
     main
 
-} 2>&1 | tee "$lobster_logfile" >&3 2>&4
+} 2>&1 | tee "$lobster_session_logfile" >&3 2>&4
 exec 1>&3 2>&4
